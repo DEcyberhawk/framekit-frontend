@@ -1,27 +1,8 @@
-// src/api/auth.js
-import bcrypt from "bcryptjs";
+import axios from "axios";
 
-const users = [
-  {
-    id: 1,
-    email: "admin@framekit.app",
-    passwordHash: "$2a$10$4nZ1IXMvKd5b6vmY2Z3kheKxQv4gDRZk3AWTxWZmldfM5NzS8MHEK", // 'password123'
-    role: "founder",
-  },
-  {
-    id: 2,
-    email: "staff@framekit.app",
-    passwordHash: "$2a$10$V5zMZn6c6gA9NmWrmROruOHBvIu7X5XcV6C0fDJL7M5fXwG2RbLlu", // 'staffpass'
-    role: "users",
-  },
-];
+const API = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export const loginUser = async (email, password) => {
-  const user = users.find((u) => u.email === email);
-  if (!user) throw new Error("User not found");
-
-  const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) throw new Error("Incorrect password");
-
-  return { id: user.id, email: user.email, role: user.role };
+  const response = await axios.post(`${API}/auth/login`, { email, password });
+  return response.data;
 };

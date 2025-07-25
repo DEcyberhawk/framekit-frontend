@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { loginUser } from "../api/auth";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -10,13 +10,22 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
-      localStorage.setItem("token", res.data.token);
-      navigate("/admin/founder");
+      const data = await loginUser(email, password);
+
+      // Save token and user info
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Optional: Redirect based on role
+      if (data.user.role === "Admin") {
+        navigate("/admin/founder");
+      } else {
+        navigate("/admin/brand-gallery"); // fallback
+      }
+
     } catch (error) {
       setMessage(error.response?.data?.message || "Login failed");
     }
@@ -33,6 +42,7 @@ const LoginPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="border px-3 py-2 rounded"
+            required
           />
           <input
             type="password"
@@ -40,6 +50,7 @@ const LoginPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="border px-3 py-2 rounded"
+            required
           />
           <button
             type="submit"
