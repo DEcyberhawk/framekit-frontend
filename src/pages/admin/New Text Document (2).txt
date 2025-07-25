@@ -1,0 +1,238 @@
+import React, { useState, useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  fetchTickets,
+  createTicket,
+  updateTicket,
+  deleteTicket,
+} from "../../api/mockApi";
+
+const statuses = ["All", "Open", "In Progress", "Closed"];
+const priorities = ["All", "High", "Medium", "Low"];
+
+const SupportDashboard = () => {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filterPriority, setFilterPriority] = useState("All");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ subject: "", priority: "Medium", status: "Open" });
+
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const loadTickets = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchTickets();
+      setTickets(data);
+    } catch {
+      toast.error("Failed to load tickets.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openModal = () => {
+    setFormData({ subject: "", priority: "Medium", status: "Open" });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => setModalOpen(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((f) => ({ ...f, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.subject.trim()) {
+      toast.error("Subject is required.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await createTicket(formData);
+      toast.success("Ticket created.");
+      await loadTickets();
+      closeModal();
+    } catch {
+      toast.error("Failed to create ticket.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete this ticket?")) {
+      setLoading(true);
+      try {
+        await deleteTicket(id);
+        toast.success("Ticket deleted.");
+        await loadTickets();
+      } catch {
+        toast.error("Delete failed.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const filteredTickets = tickets.filter((ticket) => {
+    return (
+      (filterStatus === "All" || ticket.status === filterStatus) &&
+      (filterPriority === "All" || ticket.priority === filterPriority)
+    );
+  });
+
+  return (
+    <div>
+      <Toaster />
+      <h1>Support Dashboard</h1>
+
+      <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: 6 }}>
+          {statuses.map((status) => (
+            <option key={status} value={status}>{status}</option>
+          ))}
+        </select>
+
+        <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ padding: 6 }}>
+          {priorities.map((priority) => (
+            <option key={priority} value={priority}>{priority}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={openModal}
+          style={{ marginLeft: "auto", padding: "8px 16px", backgroundColor: "#4F46E5", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+        >
+          Create Ticket
+        </button>
+      </div>
+
+      {loading ? (
+        <p>Loading tickets...</p>
+      ) : filteredTickets.length === 0 ? (
+        <p>No tickets found.</p>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #ddd" }}>
+              <th style={{ padding: 8, textAlign: "left" }}>Subject</th>
+              <th style={{ padding: 8, textAlign: "left" }}>Status</th>
+              <th style={{ padding: 8, textAlign: "left" }}>Priority</th>
+              <th style={{ padding: 8, textAlign: "left" }}>Date</th>
+              <th style={{ padding: 8, textAlign: "center" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTickets.map(({ id, subject, status, priority, date }) => (
+              <tr key={id} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ padding: 8 }}>{subject}</td>
+                <td style={{ padding: 8 }}>{status}</td>
+                <td style={{ padding: 8 }}>{priority}</td>
+                <td style={{ padding: 8 }}>{date}</td>
+                <td style={{ padding: 8, textAlign: "center" }}>
+                  <button
+                    onClick={() => handleDelete(id)}
+                    style={{ cursor: "pointer", color: "red" }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {modalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex", justifyContent: "center", alignItems: "center",
+            zIndex: 999,
+          }}
+          onClick={closeModal}
+        >
+          <div
+            style={{ backgroundColor: "white", padding: 24, borderRadius: 8, width: 400 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Create Support Ticket</h2>
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="subject">Subject</label>
+                <input
+                  id="subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleInputChange}
+                  required
+                  style={{ width: "100%", padding: 8, marginTop: 4 }}
+                />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="status">Status</label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                  style={{ width: "100%", padding: 8, marginTop: 4 }}
+                >
+                  {statuses.filter(s => s !== "All").map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="priority">Priority</label>
+                <select
+                  id="priority"
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleInputChange}
+                  required
+                  style={{ width: "100%", padding: 8, marginTop: 4 }}
+                >
+                  {priorities.filter(p => p !== "All").map((priority) => (
+                    <option key={priority} value={priority}>{priority}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button type="button" onClick={closeModal} style={{ padding: "8px 12px" }}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: "#4F46E5",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                    fontWeight: "600",
+                  }}
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SupportDashboard;
