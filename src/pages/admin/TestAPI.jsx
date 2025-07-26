@@ -2,19 +2,25 @@ import React, { useEffect, useState } from "react";
 import axios from "../../utils/axiosInstance";
 
 const TestAPI = () => {
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("Checking...");
+
+  const testIfServerIsUp = async () => {
+    try {
+      const response = await axiosInstance.get("/"); // ✅ Calls /api/auth using the baseURL
+      setStatus(`✅ ${res.data}`);
+    } catch (err) {
+      setStatus(`❌ Error: ${err.response?.data?.message || err.message}`);
+    }
+  };
 
   useEffect(() => {
-    axios
-      .get("/auth")
-      .then((res) => setMessage(res.data))
-      .catch((err) => setMessage("❌ API Error"));
+    testIfServerIsUp();
   }, []);
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Test API Page</h1>
-      <p>{typeof message === "string" ? message : JSON.stringify(message)}</p>
+    <div style={{ padding: "40px", textAlign: "center" }}>
+      <h1>🔍 API Test Page</h1>
+      <p>{status}</p>
     </div>
   );
 };
