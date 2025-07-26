@@ -1,30 +1,20 @@
 import React, { useEffect, useState } from "react";
-import axiosInstance from "../utils/axiosInstance";
+import axios from "../../utils/axiosInstance";
 
 const TestAPI = () => {
-  const [status, setStatus] = useState("Testing...");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    axiosInstance
+    axios
       .get("/auth")
-      .then((res) => {
-        setStatus(`✅ Success: ${res.data}`);
-      })
-      .catch((err) => {
-        console.error(err);
-        if (err.response) {
-          setStatus(`❌ ${err.response.status} - ${err.response.statusText}`);
-        } else {
-          setStatus(`❌ Network Error: ${err.message}`);
-        }
-      });
+      .then((res) => setMessage(res.data))
+      .catch((err) => setMessage("❌ API Error"));
   }, []);
 
   return (
-    <div style={{ padding: "40px", textAlign: "center" }}>
-      <h1>API Diagnostic</h1>
-      <p>Base URL: {axiosInstance.defaults.baseURL}</p>
-      <p>Status: {status}</p>
+    <div style={{ padding: "40px" }}>
+      <h1>Test API Page</h1>
+      <p>{typeof message === "string" ? message : JSON.stringify(message)}</p>
     </div>
   );
 };

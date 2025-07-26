@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import TestAPI from "./pages/TestAPI";
+import TestAPI from "./pages/admin/TestAPI";
 
 const App = () => {
   return (
